@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Психолог · Индивидуальные консультации</title>
+  <meta name="description" content="Индивидуальные консультации психолога. Работа с тревогой, выгоранием, отношениями и личными границами." />
+
+  <!-- Шрифты: Cormorant Garamond (заголовки) + Inter (текст) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS через CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#181715',
+            coal: '#1F1E1B',
+            panel: '#26241F',
+            line: '#34312B',
+            cream: '#EAE5DA',
+            muted: '#A8A298',
+            gold: '#C69C59',
+            goldhi: '#D4A359',
+          },
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body { background: #181715; color: #EAE5DA; -webkit-font-smoothing: antialiased; }
+    ::selection { background: #C69C59; color: #181715; }
+
+    .hero-glow {
+      background:
+        radial-gradient(60% 50% at 80% 10%, rgba(198,156,89,.14), transparent 70%),
+        radial-gradient(50% 40% at 10% 90%, rgba(198,156,89,.07), transparent 70%);
+    }
+
+    /* Появление при скролле */
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .8s ease, transform .8s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* Аккордеон */
+    .acc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
+    .acc-body > div { overflow: hidden; }
+    .acc-item.open .acc-body { grid-template-rows: 1fr; }
+    .acc-item.open .acc-icon { transform: rotate(45deg); }
+    .acc-icon { transition: transform .3s ease; }
+
+    /* Поля формы */
+    .field {
+      width: 100%;
+      background: transparent;
+      border: 1px solid #3a372f;
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #EAE5DA;
+      font-size: 15px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field::placeholder { color: #7d776c; }
+    .field:focus { outline: none; border-color: #C69C59; box-shadow: 0 0 0 3px rgba(198,156,89,.15); }
+    .field.invalid { border-color: #c4665a; box-shadow: 0 0 0 3px rgba(196,102,90,.12); }
+    select.field {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C69C59' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 42px;
+    }
+    select.field option { background: #1F1E1B; color: #EAE5DA; }
+    .err { color: #d98277; font-size: 12.5px; margin-top: 6px; display: none; }
+    .err.show { display: block; }
+
+    /* Чекбокс */
+    .check { appearance: none; width: 20px; height: 20px; flex-shrink: 0; border: 1px solid #4a463c; border-radius: 5px; background: transparent; cursor: pointer; position: relative; transition: all .2s; margin-top: 2px; }
+    .check:checked { background: #C69C59; border-color: #C69C59; }
+    .check:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #181715; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .check.invalid { border-color: #c4665a; }
+
+    /* Уведомление */
+    .toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; transition: all .45s ease; z-index: 60; max-width: calc(100% - 32px); }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(24,23,21,.3); border-top-color: #181715; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+    .loading .spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body class="font-sans font-light antialiased">
+
+  <!-- ============ HEADER ============ -->
+  <header class="fixed top-0 inset-x-0 z-40 backdrop-blur-md bg-ink/70 border-b border-line/60">
+    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+      <a href="#top" class="font-serif text-xl tracking-wide text-cream">Имя Фамилия<span class="text-gold">.</span></a>
+      <nav class="hidden md:flex items-center gap-8 text-sm text-muted">
+        <a href="#about" class="hover:text-cream transition">Формат работы</a>
+        <a href="#faq" class="hover:text-cream transition">Вопросы</a>
+        <a href="#booking" class="hover:text-cream transition">Запись</a>
+      </nav>
+      <a href="#booking" class="text-sm px-5 py-2 rounded-full border border-gold/60 text-gold hover:bg-gold hover:text-ink transition">Записаться</a>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero-glow relative pt-32 pb-24 md:pt-44 md:pb-36 px-5">
+      <div class="max-w-4xl mx-auto text-center reveal">
+        <p class="uppercase tracking-[.3em] text-xs text-gold mb-7">Психолог · Индивидуальные консультации</p>
+        <h1 class="font-serif text-5xl sm:text-6xl md:text-7xl leading-[1.05] text-cream">
+          Пространство, где можно <em class="text-gold not-italic font-medium">выдохнуть</em> и разобраться в себе
+        </h1>
+        <p class="mt-8 text-base md:text-lg text-muted max-w-2xl mx-auto leading-relaxed">
+          Бережная работа с тревогой, выгоранием, отношениями и личными границами. Без осуждения, без шаблонов — в вашем темпе.
+        </p>
+        <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a href="#booking" class="inline-block px-9 py-4 rounded-full bg-gold hover:bg-goldhi text-ink font-medium tracking-wide transition shadow-[0_10px_40px_-10px_rgba(198,156,89,.5)]">
+            Записаться на консультацию
+          </a>
+          <a href="#about" class="text-sm text-muted hover:text-cream transition underline underline-offset-8 decoration-line">Как проходит работа</a>
+        </div>
+
+        <div class="mt-20 grid grid-cols-3 max-w-xl mx-auto gap-6 text-center">
+          <div><div class="font-serif text-4xl text-cream">8+</div><div class="text-xs text-muted mt-1">лет практики</div></div>
+          <div><div class="font-serif text-4xl text-cream">500+</div><div class="text-xs text-muted mt-1">клиентов</div></div>
+          <div><div class="font-serif text-4xl text-cream">50 мин</div><div class="text-xs text-muted mt-1">одна сессия</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="py-24 md:py-32 px-5 bg-coal">
+      <div class="max-w-6xl mx-auto">
+        <div class="max-w-2xl reveal">
+          <p class="uppercase tracking-[.3em] text-xs text-gold mb-4">Обо мне · Формат работы</p>
+          <h2 class="font-serif text-4xl md:text-5xl leading-tight text-cream">Спокойный, профессиональный и честный подход</h2>
+          <p class="mt-6 text-muted leading-relaxed">
+            Я — практикующий психолог. Работаю на основе доказательных методов, соблюдаю этику и конфиденциальность. Моя задача — не давать готовые советы, а помочь вам найти собственные опоры.
+          </p>
+        </div>
+
+        <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <article class="reveal bg-panel/60 border border-line rounded-2xl p-7 hover:border-gold/50 transition">
+            <div class="w-11 h-11 rounded-full border border-gold/40 flex items-center justify-center text-gold mb-6">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            </div>
+            <h3 class="font-serif text-2xl text-cream mb-2">Конфиденциальность</h3>
+            <p class="text-sm text-muted leading-relaxed">Всё, о чём вы говорите на сессии, остаётся только между нами.</p>
+          </article>
+
+          <article class="reveal bg-panel/60 border border-line rounded-2xl p-7 hover:border-gold/50 transition">
+            <div class="w-11 h-11 rounded-full border border-gold/40 flex items-center justify-center text-gold mb-6">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </div>
+            <h3 class="font-serif text-2xl text-cream mb-2">Ваш темп</h3>
+            <p class="text-sm text-muted leading-relaxed">Без давления и спешки. Глубина работы определяется вами.</p>
+          </article>
+
+          <article class="reveal bg-panel/60 border border-line rounded-2xl p-7 hover:border-gold/50 transition">
+            <div class="w-11 h-11 rounded-full border border-gold/40 flex items-center justify-center text-gold mb-6">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </div>
+            <h3 class="font-serif text-2xl text-cream mb-2">Онлайн и офлайн</h3>
+            <p class="text-sm text-muted leading-relaxed">Встречи по видеосвязи из любой точки мира или лично в кабинете.</p>
+          </article>
+
+          <article class="reveal bg-panel/60 border border-line rounded-2xl p-7 hover:border-gold/50 transition">
+            <div class="w-11 h-11 rounded-full border border-gold/40 flex items-center justify-center text-gold mb-6">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7L12 3z"/></svg>
+            </div>
+            <h3 class="font-serif text-2xl text-cream mb-2">Доказательные методы</h3>
+            <p class="text-sm text-muted leading-relaxed">КПТ, схема-терапия и другие подходы с подтверждённой эффективностью.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section id="faq" class="py-24 md:py-32 px-5">
+      <div class="max-w-3xl mx-auto">
+        <div class="text-center reveal">
+          <p class="uppercase tracking-[.3em] text-xs text-gold mb-4">FAQ</p>
+          <h2 class="font-serif text-4xl md:text-5xl text-cream">Частые вопросы</h2>
+        </div>
+
+        <div class="mt-14 border-t border-line reveal" id="accordion">
+          <div class="acc-item border-b border-line">
+            <button type="button" class="w-full flex items-center justify-between gap-6 py-6 text-left" aria-expanded="false">
+              <span class="font-serif text-xl md:text-2xl text-cream">Как проходит первая консультация?</span>
+              <span class="acc-icon text-gold text-2xl leading-none">+</span>
+            </button>
+            <div class="acc-body"><div><p class="pb-6 text-muted leading-relaxed">Мы знакомимся, вы рассказываете о запросе, а я объясняю, как устроена работа. В конце мы вместе решаем, подходит ли вам такой формат, и намечаем план дальнейших встреч.</p></div></div>
+          </div>
+
+          <div class="acc-item border-b border-line">
+            <button type="button" class="w-full flex items-center justify-between gap-6 py-6 text-left" aria-expanded="false">
+              <span class="font-serif text-xl md:text-2xl text-cream">Сколько длится сессия и как часто нужно приходить?</span>
+              <span class="acc-icon text-gold text-2xl leading-none">+</span>
+            </button>
+            <div class="acc-body"><div><p class="pb-6 text-muted leading-relaxed">Одна сессия — 50 минут. Обычно мы встречаемся раз в неделю, особенно на начальном этапе. Позже частоту можно изменить.</p></div></div>
+          </div>
+
+          <div class="acc-item border-b border-line">
+            <button type="button" class="w-full flex items-center justify-between gap-6 py-6 text-left" aria-expanded="false">
+              <span class="font-serif text-xl md:text-2xl text-cream">Это конфиденциально?</span>
+              <span class="acc-icon text-gold text-2xl leading-none">+</span>
+            </button>
+            <div class="acc-body"><div><p class="pb-6 text-muted leading-relaxed">Да. Я придерживаюсь профессиональной этики: информация о вас и содержание сессий не передаются третьим лицам.</p></div></div>
+          </div>
+
+          <div class="acc-item border-b border-line">
+            <button type="button" class="w-full flex items-center justify-between gap-6 py-6 text-left" aria-expanded="false">
+              <span class="font-serif text-xl md:text-2xl text-cream">Можно ли заниматься онлайн?</span>
+              <span class="acc-icon text-gold text-2xl leading-none">+</span>
+            </button>
+            <div class="acc-body"><div><p class="pb-6 text-muted leading-relaxed">Конечно. Онлайн-формат по эффективности не уступает очному. Нужны только стабильный интернет и уединённое место.</p></div></div>
+          </div>
+
+          <div class="acc-item border-b border-line">
+            <button type="button" class="w-full flex items-center justify-between gap-6 py-6 text-left" aria-expanded="false">
+              <span class="font-serif text-xl md:text-2xl text-cream">Что, если я не уверен(а), что мне нужна терапия?</span>
+              <span class="acc-icon text-gold text-2xl leading-none">+</span>
+            </button>
+            <div class="acc-body"><div><p class="pb-6 text-muted leading-relaxed">Это нормально. Оставьте заявку — на первой встрече мы вместе поймём, с чем вы пришли и чем я могу быть полезна. Обязательств это не накладывает.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BOOKING FORM ============ -->
+    <section id="booking" class="py-24 md:py-32 px-5 bg-coal">
+      <div class="max-w-2xl mx-auto">
+        <div class="text-center reveal">
+          <p class="uppercase tracking-[.3em] text-xs text-gold mb-4">Запись</p>
+          <h2 class="font-serif text-4xl md:text-5xl text-cream">Запишитесь на консультацию</h2>
+          <p class="mt-5 text-muted">Оставьте заявку — я свяжусь с вами, чтобы согласовать удобное время.</p>
+        </div>
+
+        <form id="bookingForm" novalidate class="reveal mt-12 bg-panel/50 border border-line rounded-3xl p-6 sm:p-10 space-y-6">
+
+          <div>
+            <label for="name" class="block text-sm text-muted mb-2">Ваше имя <span class="text-gold">*</span></label>
+            <input id="name" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться?" class="field" />
+            <p class="err" data-err="name">Пожалуйста, укажите имя</p>
+          </div>
+
+          <div>
+            <label for="contact" class="block text-sm text-muted mb-2">Telegram или телефон <span class="text-gold">*</span></label>
+            <input id="contact" name="contact" type="text" autocomplete="off" placeholder="@username или +373 ..." class="field" />
+            <p class="err" data-err="contact">Укажите Telegram (@username) или номер телефона</p>
+          </div>
+
+          <div>
+            <label for="topic" class="block text-sm text-muted mb-2">Тема обращения <span class="text-gold">*</span></label>
+            <select id="topic" name="topic" class="field">
+              <option value="" selected disabled>Выберите тему</option>
+              <option>Тревога и стресс</option>
+              <option>Выгорание</option>
+              <option>Отношения</option>
+              <option>Личные границы</option>
+            </select>
+            <p class="err" data-err="topic">Выберите тему обращения</p>
+          </div>
+
+          <div>
+            <label for="message" class="block text-sm text-muted mb-2">Сообщение <span class="text-xs text-muted/70">(необязательно)</span></label>
+            <textarea id="message" name="message" rows="4" placeholder="Коротко расскажите, с чем хотите прийти" class="field resize-none"></textarea>
+          </div>
+
+          <div>
+            <label class="flex gap-3 items-start cursor-pointer">
+              <input id="consent" type="checkbox" class="check" />
+              <span class="text-sm text-muted leading-relaxed">Я даю согласие на обработку персональных данных и соглашаюсь с условиями конфиденциальности.</span>
+            </label>
+            <p class="err" data-err="consent">Необходимо согласие на обработку данных</p>
+          </div>
+
+          <!-- Honeypot: скрытое поле, люди его не видят, боты заполняют -->
+          <div class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <button type="submit" id="submitBtn" class="w-full flex items-center justify-center gap-3 py-4 rounded-full bg-gold hover:bg-goldhi text-ink font-semibold tracking-[.15em] text-sm transition disabled:opacity-60 disabled:cursor-not-allowed">
+            <span class="spinner"></span>
+            <span id="btnText">ОТПРАВИТЬ ЗАЯВКУ</span>
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="py-10 px-5 border-t border-line">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted">
+      <span class="font-serif text-lg text-cream">Имя Фамилия<span class="text-gold">.</span></span>
+      <a id="tgLink" href="#" target="_blank" rel="noopener" class="hidden hover:text-gold transition"></a>
+      <span>© <span id="year"></span> Частная практика. Все права защищены.</span>
+    </div>
+  </footer>
+
+  <!-- Модальное окно успешной отправки -->
+  <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-5" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div id="modalBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md bg-panel border border-gold/40 rounded-3xl p-8 sm:p-10 text-center shadow-2xl">
+      <div class="mx-auto w-14 h-14 rounded-full border border-gold/60 flex items-center justify-center text-gold text-2xl mb-6">✓</div>
+      <h3 id="modalTitle" class="font-serif text-3xl text-cream mb-3">Заявка принята!</h3>
+      <p class="text-cream/90">Мы уже обрабатываем ваш запрос</p>
+      <p id="modalNote" class="text-sm text-muted mt-3 leading-relaxed"></p>
+      <a id="modalBotLink" href="#" target="_blank" rel="noopener" class="hidden mt-7 items-center justify-center gap-2 w-full py-4 rounded-full bg-gold hover:bg-goldhi text-ink font-semibold tracking-wide text-sm transition">
+        Открыть диалог с ботом
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <button id="modalClose" type="button" class="mt-4 text-sm text-muted hover:text-cream transition">Закрыть</button>
+    </div>
+  </div>
+
+  <!-- Уведомление -->
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <div id="toastBox" class="flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl backdrop-blur-md">
+      <span id="toastIcon" class="text-xl"></span>
+      <span id="toastMsg" class="text-sm"></span>
+    </div>
+  </div>
+
+  <!-- Публичная конфигурация (адрес сервера и username). Секретов здесь нет. Подключается ДО основного скрипта -->
+  <script src="config.js"></script>
+
+  <script>
+    /* ==========================================================
+       НАСТРОЙКИ БЕРУТСЯ ИЗ config.js (объект CONFIG).
+       Шаблон: config.example.js → скопируйте в config.js и заполните.
+       ========================================================== */
+    const CFG = (typeof CONFIG !== 'undefined' && CONFIG) ? CONFIG : {};
+    const TELEGRAM_USERNAME = (CFG.TELEGRAM_USERNAME || '').replace(/^@/, '');
+    const isPlaceholder = (v) => !v || /your_|ВСТАВЬТЕ/i.test(v);
+
+    // Username бота (без @) — для кнопки «Открыть диалог с ботом»
+    const BOT_USERNAME = isPlaceholder(CFG.TELEGRAM_BOT_USERNAME) ? '' : CFG.TELEGRAM_BOT_USERNAME.replace(/^@/, '');
+    // Адрес вашего сервера (server/), например https://psy-api.onrender.com
+    // Токен бота в браузере НЕ нужен — он хранится только на сервере
+    const API_URL = isPlaceholder(CFG.API_URL) ? '' : CFG.API_URL.replace(/\/$/, '');
+
+
+    /* ---------- Утилиты ---------- */
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+    $('#year').textContent = new Date().getFullYear();
+
+    // Ссылка на Telegram в футере — из CONFIG.TELEGRAM_USERNAME
+    if (TELEGRAM_USERNAME && !isPlaceholder(TELEGRAM_USERNAME)) {
+      const link = $('#tgLink');
+      link.href = `https://t.me/${encodeURIComponent(TELEGRAM_USERNAME)}`;
+      link.textContent = `Telegram: @${TELEGRAM_USERNAME}`;
+      link.classList.remove('hidden');
+    }
+
+    // Экранирование для parse_mode=HTML (защита от поломки разметки пользовательским вводом)
+    const escapeHTML = (str) =>
+      String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    /* ---------- Появление при скролле ---------- */
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    $$('.reveal').forEach((el) => io.observe(el));
+
+    /* ---------- Аккордеон ---------- */
+    $$('.acc-item > button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        const willOpen = !item.classList.contains('open');
+        $$('.acc-item').forEach((i) => {
+          i.classList.remove('open');
+          i.querySelector('button').setAttribute('aria-expanded', 'false');
+        });
+        if (willOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+
+    /* ---------- Уведомления ---------- */
+    let toastTimer;
+    function showToast(message, type = 'success') {
+      const toast = $('#toast'), box = $('#toastBox');
+      $('#toastMsg').textContent = message;
+      $('#toastIcon').textContent = type === 'success' ? '✓' : '!';
+      box.className = 'flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl backdrop-blur-md ' +
+        (type === 'success'
+          ? 'bg-panel/95 border-gold/60 text-cream [&_#toastIcon]:text-gold'
+          : 'bg-panel/95 border-red-400/50 text-cream');
+      $('#toastIcon').style.color = type === 'success' ? '#C69C59' : '#d98277';
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 5500);
+    }
+
+    /* ---------- Валидация ---------- */
+    const form = $('#bookingForm');
+    const fields = {
+      name:    $('#name'),
+      contact: $('#contact'),
+      topic:   $('#topic'),
+      consent: $('#consent'),
+    };
+
+    function setError(key, hasError) {
+      fields[key].classList.toggle('invalid', hasError);
+      $(`[data-err="${key}"]`).classList.toggle('show', hasError);
+    }
+
+    // Telegram: @username (5–32 символов) или телефон (минимум 6 цифр)
+    function isValidContact(v) {
+      const value = v.trim();
+      if (/^@?[A-Za-z][A-Za-z0-9_]{4,31}$/.test(value)) return true;
+      const digits = value.replace(/\D/g, '');
+      return /^[+\d][\d\s\-()]*$/.test(value) && digits.length >= 6 && digits.length <= 15;
+    }
+
+    function validate() {
+      const checks = {
+        name:    fields.name.value.trim().length >= 2,
+        contact: isValidContact(fields.contact.value),
+        topic:   !!fields.topic.value,
+        consent: fields.consent.checked,
+      };
+      Object.entries(checks).forEach(([k, ok]) => setError(k, !ok));
+      return Object.values(checks).every(Boolean);
+    }
+
+    // Снимаем ошибку по мере исправления
+    ['input', 'change'].forEach((evt) =>
+      form.addEventListener(evt, (e) => {
+        const key = Object.keys(fields).find((k) => fields[k] === e.target);
+        if (key && fields[key].classList.contains('invalid')) validate();
+      })
+    );
+
+    /* ---------- Отправка в Telegram ---------- */
+    /* Заявка уходит на ваш сервер (server/). Он отправляет карточку с кнопками
+       специалисту и выдаёт token для персональной ссылки на бота. */
+    async function submitToServer(data) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      try {
+        const res = await fetch(`${API_URL}/api/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          signal: ctrl.signal,
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.status === 429) throw new Error('Слишком много заявок, попробуйте через несколько минут');
+        if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+        return { token: json.token, clientNotified: false };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    /* ---------- Модальное окно ---------- */
+    const modal = $('#modal');
+    function showSuccessModal({ token, clientNotified }) {
+      const link = $('#modalBotLink');
+      if (BOT_USERNAME) {
+        link.href = `https://t.me/${encodeURIComponent(BOT_USERNAME)}` + (token ? `?start=${encodeURIComponent(token)}` : '');
+        link.classList.remove('hidden');
+        link.classList.add('inline-flex');
+      } else {
+        link.classList.add('hidden');
+        link.classList.remove('inline-flex');
+      }
+      $('#modalNote').textContent = clientNotified
+        ? 'Подтверждение уже отправлено вам в Telegram. Я свяжусь с вами в ближайшее время.'
+        : BOT_USERNAME
+          ? 'Нажмите кнопку ниже и запустите бота — он пришлёт подтверждение. Я свяжусь с вами в ближайшее время.'
+          : 'Я свяжусь с вами в ближайшее время.';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      $('#modalClose').focus();
+    }
+    function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    $('#modalClose').addEventListener('click', closeModal);
+    $('#modalBackdrop').addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validate()) {
+        showToast('Проверьте, пожалуйста, обязательные поля', 'error');
+        return;
+      }
+
+      if (typeof CONFIG === 'undefined') {
+        showToast('Не найден config.js — создайте его по образцу config.example.js', 'error');
+        return;
+      }
+      if (!API_URL) {
+        showToast('Укажите API_URL в config.js', 'error');
+        return;
+      }
+
+      const btn = $('#submitBtn');
+      btn.disabled = true;
+      btn.classList.add('loading');
+      $('#btnText').textContent = 'ОТПРАВКА…';
+
+      try {
+        const payload = {
+          name:    fields.name.value.trim(),
+          contact: fields.contact.value.trim(),
+          topic:   fields.topic.value,
+          message: $('#message').value.trim(),
+          website: $('#website').value, // honeypot от ботов
+        };
+        const result = await submitToServer(payload);
+        showSuccessModal(result);
+        form.reset();
+        Object.keys(fields).forEach((k) => setError(k, false));
+      } catch (err) {
+        console.error('Ошибка отправки:', err);
+        showToast(
+          'Не удалось отправить заявку. ' +
+          (TELEGRAM_USERNAME && !isPlaceholder(TELEGRAM_USERNAME)
+            ? `Напишите мне напрямую в Telegram: @${TELEGRAM_USERNAME}`
+            : 'Попробуйте позже'),
+          'error'
+        );
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        $('#btnText').textContent = 'ОТПРАВИТЬ ЗАЯВКУ';
+      }
+    });
+  </script>
+</body>
+</html>
